@@ -1,0 +1,67 @@
+import { prisma } from "@/utils/db";
+import React from "react";
+import { redirect } from "next/navigation";
+import StatusBadge from "@/components/statusBadge";
+import Link from "next/link";
+import {handleDelete, handleDeleteUsingId} from "@/utils/actions";
+interface SingleTaskPageProps {
+  params: { taskId: string };
+}
+export default async function SingleTaskPage({
+  params: { taskId },
+}: SingleTaskPageProps) {
+  const task = await prisma.task.findUnique({
+    where: {
+      id: parseInt(taskId),
+    },
+  });
+  if (!task) {
+    return redirect("/");
+  }
+  // use bind to pass the id to the function
+  const handleDeleteWithBind = handleDeleteUsingId.bind(null, parseInt(taskId));
+  return (
+    <section className="container p-5 mx-auto">
+      <div className="flex items-center justify-between">
+        <Link href="/" className="underline">
+          {"<< "} Back to tasks table
+        </Link>
+        <div className="flex items-center">
+          <Link
+            href={`/tasks/${task.id}/edit`}
+            className="bg-green-700 hover:bg-green-600 transition-colors rounded-lg py-1 px-2 me-3 text-xl"
+          >
+            Edit
+          </Link>
+          <form action={handleDelete}>
+            <input type="hidden" name="id" value={task.id} />
+            <button
+              type="submit"
+              className="bg-red-700 hover:bg-red-600 transition-colors rounded-lg py-1 px-2 text-xl"
+            >
+              Delete
+            </button>
+          </form>
+          <form className="px-2" action={handleDeleteWithBind}>
+            <button
+              type="submit"
+              className="bg-red-700 hover:bg-red-600 transition-colors rounded-lg py-1 px-2 text-xl"
+            >
+              Bind Delete
+            </button>
+          </form>
+        </div>
+      </div>
+      <div className="mt-16 p-5 rounded-lg bg-gray-600">
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-3xl">{task.title}</h2>
+          <StatusBadge status={task.status} />
+        </div>
+        <small className="text-yellow-400">
+          {new Date(task.createdAt).toDateString()}
+        </small>
+        <p className="mt-5 text-xl">{task.description}</p>
+      </div>
+    </section>
+  );
+}
